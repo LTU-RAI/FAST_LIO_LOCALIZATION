@@ -40,11 +40,11 @@ def msg_to_array(pc_msg):
 
 
 def registration_at_scale(pc_scan, pc_map, initial, scale):
-    result_icp = o3d.registration.registration_icp(
+    result_icp = o3d.pipelines.registration.registration_icp(
         voxel_down_sample(pc_scan, SCAN_VOXEL_SIZE * scale), voxel_down_sample(pc_map, MAP_VOXEL_SIZE * scale),
         1.0 * scale, initial,
-        o3d.registration.TransformationEstimationPointToPoint(),
-        o3d.registration.ICPConvergenceCriteria(max_iteration=20)
+        o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+        o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=20)
     )
 
     return result_icp.transformation, result_icp.fitness
@@ -222,7 +222,7 @@ if __name__ == '__main__':
     FOV = 3.14 # 1.6
 
     # The farthest distance(meters) within FOV
-    FOV_FAR = 100
+    FOV_FAR = 150
 
     rospy.init_node('fast_lio_localization')
     rospy.loginfo('Localization Node Inited...')
