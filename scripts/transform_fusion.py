@@ -10,12 +10,55 @@ import numpy as np
 import rospy
 import tf
 import tf.transformations
-from geometry_msgs.msg import Pose, Point, Quaternion
+from geometry_msgs.msg import Pose, Point, Quaternion, Twist
 from nav_msgs.msg import Odometry
+
+import scipy.signal as ss
+from collections import deque
+from statistics import median
+
 
 cur_odom_to_baselink = None
 cur_map_to_odom = None
+## Keep the last five poses
+velocities_x = deque(maxlen=15)
+velocities_y = deque(maxlen=15)
+velocities_z = deque(maxlen=15)
+last_pose = None
 
+MAX_VEL = 2.5
+
+def velocity_filter(odom_msg, last_odom_msg):
+    ## Global deques
+    global velocities_x, velocities_y, velocities_z
+    ## If last pose is empty
+    if last_odom_msg is None:
+        last_odom_msg = odom_msg
+        return 0.0, 0.0, 0.0
+    ## Calculate time difference
+    dt = (odom_msg.header.stamp - last_odom_msg.header.stamp).to_sec()
+    ## Calculate dx
+    dx, dy, dz = odom_msg.pose.pose.position.x - last_odom_msg.pose.pose.position.x, \
+                    odom_msg.pose.pose.position.y - last_odom_msg.pose.pose.position.y, \
+                        odom_msg.pose.pose.position.z - last_odom_msg.pose.pose.position.z
+    ## Calculate velocity
+    vx, vy, vz = dx/dt, dy/dt, dz/dt
+    ## Keep velocities under threshold
+    if abs(vx) < MAX_VEL:
+        velocities_x.append(vx)
+    if abs(vy) < MAX_VEL:
+        velocities_y.append(vy)
+    if abs(vz) < MAX_VEL:
+        velocities_z.append(vz)
+    ## Median scipy filter
+    median_speed_x = ss.medfilt(velocities_x)
+    median_speed_y = ss.medfilt(velocities_y)
+    median_speed_z = ss.medfilt(velocities_z)
+
+    return np.sum(median_speed_x)/len(median_speed_x), \
+                np.sum(median_speed_y)/len(median_speed_y), \
+                    np.sum(median_speed_z)/len(median_speed_z)
+    
 
 def pose_to_mat(pose_msg):
     return np.matmul(
@@ -26,7 +69,7 @@ def pose_to_mat(pose_msg):
 
 def transform_fusion():
     global cur_odom_to_baselink, cur_map_to_odom
-
+    last_odom = None
     br = tf.TransformBroadcaster()
     while True:
         time.sleep(1 / FREQ_PUB_LOCALIZATION)
@@ -45,13 +88,23 @@ def transform_fusion():
         if cur_odom is not None:
             # 发布全局定位的odometry
             localization = Odometry()
+
+            # Calculate velocities
+            if cur_odom != last_odom:
+                vx, vy, vz = velocity_filter(cur_odom, last_odom)
+
+            last_odom = cur_odom
+
             T_odom_to_base_link = pose_to_mat(cur_odom)
             # 这里T_map_to_odom短时间内变化缓慢 暂时不考虑与T_odom_to_base_link时间同步
             T_map_to_base_link = np.matmul(T_map_to_odom, T_odom_to_base_link)
             xyz = tf.transformations.translation_from_matrix(T_map_to_base_link)
             quat = tf.transformations.quaternion_from_matrix(T_map_to_base_link)
             localization.pose.pose = Pose(Point(*xyz), Quaternion(*quat))
-            localization.twist = cur_odom.twist
+            # localization.twist = cur_odom.twist
+            localization.twist.twist.linear.x = vx
+            localization.twist.twist.linear.y = vy 
+            localization.twist.twist.linear.z = vz
 
             localization.header.stamp = cur_odom.header.stamp
             localization.header.frame_id = 'map'
@@ -75,6 +128,9 @@ if __name__ == '__main__':
     FREQ_PUB_LOCALIZATION = 50
 
     rospy.init_node('transform_fusion')
+
+    last_time = rospy.get_time()
+
     rospy.loginfo('Transform Fusion Node Inited...')
 
     rospy.Subscriber('/Odometry', Odometry, cb_save_cur_odom, queue_size=1)
