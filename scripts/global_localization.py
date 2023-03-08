@@ -216,13 +216,13 @@ if __name__ == '__main__':
 
     # The threshold of global localization,
     # only those scan2map-matching with higher fitness than LOCALIZATION_TH will be taken
-    LOCALIZATION_TH = 0.95
+    LOCALIZATION_TH = 0.78
 
     # FOV(rad), modify this according to your LiDAR type
-    FOV = 1.6
+    FOV = 3.14 # 1.6
 
     # The farthest distance(meters) within FOV
-    FOV_FAR = 150
+    FOV_FAR = 100
 
     rospy.init_node('fast_lio_localization')
     rospy.loginfo('Localization Node Inited...')
@@ -255,6 +255,6 @@ if __name__ == '__main__':
     rospy.loginfo('Initialize successfully!!!!!!')
     rospy.loginfo('')
     # 开始定期全局定位
-    thread.start_new_thread(thread_localization, ())
+    _thread.start_new_thread(thread_localization, ())
 
     rospy.spin()
