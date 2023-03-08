@@ -1,6 +1,6 @@
 <launch>
 <!-- Launch file for ouster OS2-64 LiDAR -->
-    <group ns="shafter2">
+    <group ns="shafter3d">
         <arg name="rviz" default="true" />
 
         <rosparam command="load" file="$(find fast_lio_localization)/config/ouster64.yaml" />

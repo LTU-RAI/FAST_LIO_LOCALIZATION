@@ -1,6 +1,6 @@
 common:
-    lid_topic:  "/shafter2/osuter/points"
-    imu_topic:  "/shafter2/mavros/imu/data"
+    lid_topic:  "/shafter3d/osuter/points"
+    imu_topic:  "/shafter3d/mavros/imu/data"
     time_sync_en: true         # ONLY turn on when external time synchronization is really not possible
     
 preprocess:
