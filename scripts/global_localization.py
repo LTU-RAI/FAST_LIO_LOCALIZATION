@@ -212,7 +212,7 @@ if __name__ == '__main__':
     SCAN_VOXEL_SIZE = 0.1
 
     # Global localization frequency (HZ)
-    FREQ_LOCALIZATION = 0.5
+    FREQ_LOCALIZATION = 0.78
 
     # The threshold of global localization,
     # only those scan2map-matching with higher fitness than LOCALIZATION_TH will be taken
@@ -228,12 +228,12 @@ if __name__ == '__main__':
     rospy.loginfo('Localization Node Inited...')
 
     # publisher
-    pub_pc_in_map = rospy.Publisher('/cur_scan_in_map', PointCloud2, queue_size=1)
-    pub_submap = rospy.Publisher('/submap', PointCloud2, queue_size=1)
-    pub_map_to_odom = rospy.Publisher('/map_to_odom', Odometry, queue_size=1)
+    pub_pc_in_map = rospy.Publisher('cur_scan_in_map', PointCloud2, queue_size=1)
+    pub_submap = rospy.Publisher('submap', PointCloud2, queue_size=1)
+    pub_map_to_odom = rospy.Publisher('map_to_odom', Odometry, queue_size=1)
 
-    rospy.Subscriber('/cloud_registered', PointCloud2, cb_save_cur_scan, queue_size=1)
-    rospy.Subscriber('/Odometry', Odometry, cb_save_cur_odom, queue_size=1)
+    rospy.Subscriber('cloud_registered', PointCloud2, cb_save_cur_scan, queue_size=1)
+    rospy.Subscriber('Odometry', Odometry, cb_save_cur_odom, queue_size=1)
 
     # 初始化全局地图
     rospy.logwarn('Waiting for global map......')
@@ -244,7 +244,7 @@ if __name__ == '__main__':
         rospy.logwarn('Waiting for initial pose....')
 
         # 等待初始位姿
-        pose_msg = rospy.wait_for_message('/initialpose', PoseWithCovarianceStamped)
+        pose_msg = rospy.wait_for_message('initialpose', PoseWithCovarianceStamped)
         initial_pose = pose_to_mat(pose_msg)
         if cur_scan:
             initialized = global_localization(initial_pose)

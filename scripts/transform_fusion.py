@@ -132,10 +132,10 @@ if __name__ == '__main__':
 
     rospy.loginfo('Transform Fusion Node Inited...')
 
-    rospy.Subscriber('/Odometry', Odometry, cb_save_cur_odom, queue_size=1)
-    rospy.Subscriber('/map_to_odom', Odometry, cb_save_map_to_odom, queue_size=1)
+    rospy.Subscriber('Odometry', Odometry, cb_save_cur_odom, queue_size=1)
+    rospy.Subscriber('map_to_odom', Odometry, cb_save_map_to_odom, queue_size=1)
 
-    pub_localization = rospy.Publisher('/localization', Odometry, queue_size=1)
+    pub_localization = rospy.Publisher('localization', Odometry, queue_size=1)
 
     # 发布定位消息
     _thread.start_new_thread(transform_fusion, ())
