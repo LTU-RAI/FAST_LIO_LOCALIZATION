@@ -86,7 +86,7 @@ def transform_fusion():
         br.sendTransform(tf.transformations.translation_from_matrix(T_map_to_odom),
                          tf.transformations.quaternion_from_matrix(T_map_to_odom),
                          rospy.Time.now(),
-                         'camera_init', 'map')
+                         'shafter2/camera_init', 'map')
         if cur_odom is not None:
             # 发布全局定位的odometry
             localization = Odometry()
