@@ -20,6 +20,9 @@ from statistics import median
 
 cur_odom_to_baselink = None
 cur_map_to_odom = None
+current_time = 0.0
+last_time = 0.0
+
 ## Keep the last five poses
 velocities_x = deque(maxlen=15)
 velocities_y = deque(maxlen=15)
@@ -27,19 +30,18 @@ velocities_z = deque(maxlen=15)
 
 MAX_VEL = 2.5
 
-def velocity_filter(odom_msg, last_odom_msg):
+def velocity_filter(xyz, last_xyz):
     ## Global deques
     global velocities_x, velocities_y, velocities_z
+    global current_time, last_time
     ## If last pose is empty
-    if last_odom_msg is None:
-        last_odom_msg = odom_msg
+    if last_xyz is None:
+        last_xyz = xyz
         return 0.0, 0.0, 0.0
     ## Calculate time difference
-    dt = (odom_msg.header.stamp - last_odom_msg.header.stamp).to_sec()
+    dt = current_time - last_time
     ## Calculate dx
-    dx, dy, dz = odom_msg.pose.pose.position.x - last_odom_msg.pose.pose.position.x, \
-                    odom_msg.pose.pose.position.y - last_odom_msg.pose.pose.position.y, \
-                        odom_msg.pose.pose.position.z - last_odom_msg.pose.pose.position.z
+    dx, dy, dz = xyz[0] - last_xyz[0], xyz[1] - last_xyz[1], xyz[2] - last_xyz[2]
     ## Calculate velocity
     vx, vy, vz = dx/dt, dy/dt, dz/dt
     ## Keep velocities under threshold
@@ -68,7 +70,8 @@ def pose_to_mat(pose_msg):
 
 def transform_fusion():
     global cur_odom_to_baselink, cur_map_to_odom
-    last_odom = None
+    global last_time, current_time
+    last_xyz = None
     br = tf.TransformBroadcaster()
     while True:
         time.sleep(1 / FREQ_PUB_LOCALIZATION)
@@ -88,17 +91,22 @@ def transform_fusion():
             # 发布全局定位的odometry
             localization = Odometry()
 
-            # Calculate velocities
-            if cur_odom != last_odom:
-                vx, vy, vz = velocity_filter(cur_odom, last_odom)
-
-            last_odom = cur_odom
-
             T_odom_to_base_link = pose_to_mat(cur_odom)
+
+            current_time = cur_odom.header.stamp.to_sec()
+
             # 这里T_map_to_odom短时间内变化缓慢 暂时不考虑与T_odom_to_base_link时间同步
             T_map_to_base_link = np.matmul(T_map_to_odom, T_odom_to_base_link)
             xyz = tf.transformations.translation_from_matrix(T_map_to_base_link)
             quat = tf.transformations.quaternion_from_matrix(T_map_to_base_link)
+
+            # Calculate velocities
+            if (xyz != last_xyz).all():
+                vx, vy, vz = velocity_filter(xyz, last_xyz)
+
+            last_xyz = xyz
+            last_time = current_time
+
             localization.pose.pose = Pose(Point(*xyz), Quaternion(*quat))
             # localization.twist = cur_odom.twist
             localization.twist.twist.linear.x = vx
@@ -107,7 +115,7 @@ def transform_fusion():
 
             localization.header.stamp = cur_odom.header.stamp
             localization.header.frame_id = 'map'
-            localization.child_frame_id = 'body'
+            localization.child_frame_id = 'shafter3d/body'
             # rospy.loginfo_throttle(1, '{}'.format(np.matmul(T_map_to_odom, T_odom_to_base_link)))
             pub_localization.publish(localization)
 
