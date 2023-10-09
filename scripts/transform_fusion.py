@@ -1,9 +1,9 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # coding=utf8
 from __future__ import print_function, division, absolute_import
 
 import copy
-import thread
+import _thread
 import time
 
 import numpy as np
@@ -12,6 +12,9 @@ import tf
 import tf.transformations
 from geometry_msgs.msg import Pose, Point, Quaternion
 from nav_msgs.msg import Odometry
+import os
+
+namespace = os.getlogin()
 
 cur_odom_to_baselink = None
 cur_map_to_odom = None
@@ -41,7 +44,7 @@ def transform_fusion():
         br.sendTransform(tf.transformations.translation_from_matrix(T_map_to_odom),
                          tf.transformations.quaternion_from_matrix(T_map_to_odom),
                          rospy.Time.now(),
-                         'camera_init', 'map')
+                         namespace + '/camera_init', 'map')
         if cur_odom is not None:
             # 发布全局定位的odometry
             localization = Odometry()
@@ -55,7 +58,7 @@ def transform_fusion():
 
             localization.header.stamp = cur_odom.header.stamp
             localization.header.frame_id = 'map'
-            localization.child_frame_id = 'body'
+            localization.child_frame_id = namespace + '/body'
             # rospy.loginfo_throttle(1, '{}'.format(np.matmul(T_map_to_odom, T_odom_to_base_link)))
             pub_localization.publish(localization)
 
@@ -77,12 +80,12 @@ if __name__ == '__main__':
     rospy.init_node('transform_fusion')
     rospy.loginfo('Transform Fusion Node Inited...')
 
-    rospy.Subscriber('/Odometry', Odometry, cb_save_cur_odom, queue_size=1)
-    rospy.Subscriber('/map_to_odom', Odometry, cb_save_map_to_odom, queue_size=1)
+    rospy.Subscriber('Odometry', Odometry, cb_save_cur_odom, queue_size=1)
+    rospy.Subscriber('map_to_odom', Odometry, cb_save_map_to_odom, queue_size=1)
 
-    pub_localization = rospy.Publisher('/localization', Odometry, queue_size=1)
+    pub_localization = rospy.Publisher('localization', Odometry, queue_size=1)
 
     # 发布定位消息
-    thread.start_new_thread(transform_fusion, ())
+    _thread.start_new_thread(transform_fusion, ())
 
     rospy.spin()

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # coding=utf8
 from __future__ import print_function, division, absolute_import
 
@@ -10,12 +10,12 @@ from geometry_msgs.msg import Pose, Point, Quaternion, PoseWithCovarianceStamped
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('x', type=float)
-    parser.add_argument('y', type=float)
-    parser.add_argument('z', type=float)
-    parser.add_argument('yaw', type=float)
-    parser.add_argument('pitch', type=float)
-    parser.add_argument('roll', type=float)
+    parser.add_argument('x', type=float32)
+    parser.add_argument('y', type=float32)
+    parser.add_argument('z', type=float32)
+    parser.add_argument('yaw', type=float32)
+    parser.add_argument('pitch', type=float32)
+    parser.add_argument('roll', type=float32)
     args = parser.parse_args()
 
     rospy.init_node('publish_initial_pose')
