@@ -6,7 +6,11 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <fast_lio_localization/Pose6D.h>
+<<<<<<< HEAD
 #include <sensor_msgs/Imu.h>
+=======
+#include <sensor_msgs/Imu.h> 
+>>>>>>> b5fd950cf668691ced624f8110cb10b2cae127ef
 #include <nav_msgs/Odometry.h>
 #include <tf/transform_broadcaster.h>
 #include <eigen_conversions/eigen_msg.h>
